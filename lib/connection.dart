@@ -64,4 +64,11 @@ class RedisConnection{
   void disable_nagle(bool v){
     _socket.setOption(SocketOption.TCP_NODELAY,v);
   }
+
+  /**
+   * Get a future that will complete when the consumer closes, or when an
+   * error occurs. This future is identical to the future returned by
+   * [close].
+   */
+  Future get done => _socket.done;
 }
