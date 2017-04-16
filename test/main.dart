@@ -10,6 +10,8 @@
 library testredis;
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
 import '../lib/redis.dart';
 
 part 'testcas.dart';
@@ -17,6 +19,7 @@ part 'testtransaction.dart';
 part 'testperformance.dart';
 part 'testpubsub.dart';
 part 'testlua.dart';
+part 'testunicode.dart';
 
 
 Future testing_performance(Function fun,String name, int rep){
@@ -35,7 +38,7 @@ Future testing_performance(Function fun,String name, int rep){
 
 Future testing_helper(Future f,String name){
   print("start  $name");
-  return f.then((_)=>print("PASSED $name"),onError: (e)=>print("ERROR $name => $e"));
+  return f.then((_)=>print("PASSED $name"),onError: (e){print("ERROR $name => $e"); throw(e);});
 }
 
 main(){
@@ -43,6 +46,7 @@ main(){
   q.add(testing_helper(test_transactions(10000), "transaction"));
   q.add(testing_helper(test_incr_fakecas(),"transaction FAKECAS"));
   q.add(testing_helper(test_incr_fakecas_multiple(10),"transation FAKECAS multiple"));
+  q.add(testing_helper(test_unicode(), "unicode"));
   q.add(testing_helper(test_transactions_failing(),"transation error handling")); 
   q.add(testing_helper(test_transactions_command_usable(),"transaction release connection"));
   q.add(testing_helper(test_pubsub(),"pubsub"));
@@ -58,10 +62,18 @@ main(){
   .then((_)=>testing_performance(test_pubsub_performance,"pubsub performance",20000))
   .then((_){
     //just increase this number if you have more time (I did, but I lost paitence)
-    return testing_helper(test_long_running(1000),"one by one for longer time");
+    return testing_helper(test_long_running(20000),"one by one for longer time");
   })
   .then((_){
     return testing_performance(test_performance,"raw performance",200000);
+  })
+  .then((_){
+    print("all tests PASSED!");
+    exit(0);
+  })
+  .catchError((e){
+    print("some of tests FAILED! $e");
+    exit(-1);
   });
 }
 
